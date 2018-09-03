@@ -7,20 +7,10 @@ import com.github.veqryn.net.{Cidr4, Ip4}
 
 import scala.sys.process._
 
-case class IpRange(ipAddress: String, bits: Int) {
-  def toCidr = s"$ipAddress/$bits"
-}
-
-object IpRange {
-  def fromString(s: String) = {
-    val Cidr = """([\d\.]+)/(\d+)""".r
-    val Cidr(ipAddress, netmaskStr) = s
-    IpRange(ipAddress, netmaskStr.toInt)
-  }
-}
-
 case class ServerConfig(interface: String, serverEndpoint: String, serverPublicKey: String,
-                        clientIpRange: IpRange, serverLanRange: IpRange)
+                        clientIpRange: Cidr4, serverLanRange: Cidr4) {
+  lazy val allClientIps = clientIpRange.getAllIps(false)
+}
 
 class Wg(config: ServerConfig) {
 
@@ -39,8 +29,7 @@ class Wg(config: ServerConfig) {
       }
       .toSet
     // TODO: lazy val
-    val cidr4 = new Cidr4(config.clientIpRange.toCidr)
-    cidr4.getAllIps(false).find(!used.contains(_))
+    config.allClientIps.find(!used.contains(_))
   }
 
   def newClientConfig(clientIp: String) = {
@@ -63,12 +52,12 @@ class Wg(config: ServerConfig) {
       s"""[Interface]
         |PrivateKey = $clientPrivateKey
         |ListenPort = 5555
-        |Address = $clientIp/${config.serverLanRange.bits}
+        |Address = $clientIp/${config.serverLanRange.getMaskBits}
         |
         |[Peer]
         |PublicKey = ${config.serverPublicKey}
         |Endpoint = ${config.serverEndpoint}
-        |AllowedIPs = ${config.serverLanRange.toCidr}
+        |AllowedIPs = ${config.serverLanRange.getCidrSignature}
       """.stripMargin
 
     clientConfig

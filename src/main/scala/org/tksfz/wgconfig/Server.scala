@@ -1,8 +1,8 @@
 package org.tksfz.wgconfig
 
 import scala.concurrent.ExecutionContext
-
 import cats.effect.{Effect, IO}
+import com.github.veqryn.net.Cidr4
 import fs2.StreamApp
 import org.http4s.HttpService
 import org.http4s.server.blaze.BlazeBuilder
@@ -12,7 +12,8 @@ object Server extends StreamApp[IO] {
 
   def stream(args: List[String], requestShutdown: IO[Unit]): fs2.Stream[IO, StreamApp.ExitCode] = {
     val config =
-      ServerConfig("wg0", "endpoint", "pubkey", null, null)
+      ServerConfig("wg0", "endpoint", "pubkey", new Cidr4("192.168.1.0/24"),
+        new Cidr4("192.268.1.0/24"))
     ServerStream.stream[IO](config)
   }
 }
