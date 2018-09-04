@@ -3,7 +3,8 @@ package org.tksfz.wgconfig
 import java.io._
 
 import better.files.File
-import com.github.veqryn.net.{Cidr4, Ip4}
+import com.github.veqryn.net.Cidr4
+import org.slf4j.LoggerFactory
 
 import scala.sys.process._
 
@@ -13,6 +14,7 @@ case class ServerConfig(interface: String, serverEndpoint: String, serverPublicK
 }
 
 class Wg(config: ServerConfig) {
+  private val logger = LoggerFactory.getLogger(classOf[Wg])
 
   def findAvailableClientIp() = {
     val showConf = s"wg showconf ${config.interface}".lineStream_!
@@ -28,25 +30,25 @@ class Wg(config: ServerConfig) {
         }
       }
       .toSet
-    // TODO: lazy val
     config.allClientIps.find(!used.contains(_))
   }
 
   def newClientConfig(clientIp: String) = {
 
-    val (clientPublicKey, clientPrivateKey) = generatePrivateAndPublicKeys()
+    val (clientPrivateKey, clientPublicKey) = generatePrivateAndPublicKeys()
 
     // Server config
     val addServerConfig =
       s"""[Peer]
         |PublicKey = $clientPublicKey
-        |AllowedIPs = ${config.clientIpRange}
-        |""".stripMargin
+        |AllowedIPs = ${config.clientIpRange}\n""".stripMargin
 
     val f = File.newTemporaryFile("wgconfig-", ".conf", Some(File(System.getProperty("java.io.tmpdir"))))
     f.overwrite(addServerConfig)
 
-    s"wg addconf ${config.interface} ${f.pathAsString}".!
+    logger.info(addServerConfig)
+
+    //s"wg addconf ${config.interface} ${f.pathAsString}".!
 
     val clientConfig =
       s"""[Interface]
@@ -57,8 +59,7 @@ class Wg(config: ServerConfig) {
         |[Peer]
         |PublicKey = ${config.serverPublicKey}
         |Endpoint = ${config.serverEndpoint}
-        |AllowedIPs = ${config.serverLanRange.getCidrSignature}
-      """.stripMargin
+        |AllowedIPs = ${config.serverLanRange.getCidrSignature}\n""".stripMargin
 
     clientConfig
   }
