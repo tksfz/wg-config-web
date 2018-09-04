@@ -1,4 +1,4 @@
-name := "wg-config-http"
+name := "wg-config-web"
 
 scalaVersion := "2.12.6"
 
