@@ -41,7 +41,7 @@ class Wg(config: ServerConfig) {
     val addServerConfig =
       s"""[Peer]
         |PublicKey = $clientPublicKey
-        |AllowedIPs = ${config.clientIpRange}\n""".stripMargin
+        |AllowedIPs = ${clientIp}/32\n""".stripMargin
 
     val f = File.newTemporaryFile("wgconfig-", ".conf", Some(File(System.getProperty("java.io.tmpdir"))))
     f.overwrite(addServerConfig)
