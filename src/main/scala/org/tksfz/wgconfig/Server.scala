@@ -11,10 +11,29 @@ object Server extends StreamApp[IO] {
   import scala.concurrent.ExecutionContext.Implicits.global
 
   def stream(args: List[String], requestShutdown: IO[Unit]): fs2.Stream[IO, StreamApp.ExitCode] = {
-    val config =
-      ServerConfig("wg0", "endpoint", "pubkey", new Cidr4("192.168.1.0/24"),
-        new Cidr4("192.268.1.0/24"))
-    ServerStream.stream[IO](config)
+    val theCommand = command
+    theCommand.parse(args).map { config =>
+      ServerStream.stream[IO](config)
+    }.getOrElse {
+      fs2.Stream.eval(IO {
+        println(theCommand.showHelp)
+        StreamApp.ExitCode.Success
+      })
+    }
+  }
+
+  def command = {
+    import com.monovore.decline._
+    import cats.implicits._
+    val intf = Opts.option[String]("interface", help = "Wireguard interface (e.g. wg0)", short = "i")
+    val endpoint = Opts.option[String]("endpoint", help = "Server public endpoint with port (e.g. myhost.com:12345)", short = "e")
+    val pubkey = Opts.option[String]("pubkey", help = "Server public key")
+    val clientIpRange = Opts.option[String]("client-ips", help = "Client IP range as CIDR")
+    val serverLanRange = Opts.option[String]("server-lan", help = "Server LAN CIDR")
+    val combined = (intf, endpoint, pubkey, clientIpRange, serverLanRange).mapN { (intf, endpoint, pubkey, clientIpRange, serverLanRange) =>
+      ServerConfig(intf, endpoint, pubkey, new Cidr4(clientIpRange), new Cidr4(serverLanRange))
+    }
+    Command("wg-config-http", "Web interface to generate Wireguard client configs")(combined)
   }
 }
 
