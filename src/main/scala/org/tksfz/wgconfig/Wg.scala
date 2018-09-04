@@ -68,9 +68,7 @@ class Wg(config: ServerConfig) {
     import scala.sys.process._
     val privateKey = "wg genkey".lineStream_!.head
     val is = new ByteArrayInputStream(privateKey.getBytes)
-    val os = new ByteArrayOutputStream()
-    "wg pubkey" #< is #> os run()
-    val publicKey = os.toString.trim
+    val publicKey = ("wg pubkey" #< is).lineStream_!.head
     (privateKey, publicKey)
   }
 
