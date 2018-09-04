@@ -33,7 +33,7 @@ object Server extends StreamApp[IO] {
     val combined = (intf, endpoint, pubkey, clientIpRange, serverLanRange).mapN { (intf, endpoint, pubkey, clientIpRange, serverLanRange) =>
       ServerConfig(intf, endpoint, pubkey, new Cidr4(clientIpRange), new Cidr4(serverLanRange))
     }
-    Command("wg-config-http", "Web interface to generate Wireguard client configs")(combined)
+    Command("wg-config-web", "Web interface to generate Wireguard client configs")(combined)
   }
 }
 
