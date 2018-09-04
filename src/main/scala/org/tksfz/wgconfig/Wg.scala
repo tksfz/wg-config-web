@@ -57,7 +57,7 @@ class Wg(config: ServerConfig) {
       s"""[Interface]
         |PrivateKey = $clientPrivateKey
         |ListenPort = 5555
-        |Address = $clientIp/${config.serverLanRange.getMaskBits}
+        |Address = $clientIp
         |
         |[Peer]
         |PublicKey = ${config.serverPublicKey}
