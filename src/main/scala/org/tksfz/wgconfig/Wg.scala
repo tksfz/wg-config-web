@@ -19,14 +19,17 @@ class Wg(config: ServerConfig) {
   def findAvailableClientIp() = {
     val showConf = s"wg showconf ${config.interface}".lineStream_!
     val used = showConf
-      .filter(_.startsWith("AllowedIPs = "))
       .flatMap { line =>
-        val cidrStr = line.split('=')(1).trim
-        val cidr = new Cidr4(cidrStr)
-        if (cidr.getAddressCount(false) == 1) {
-          Some(cidr.getLowIp(false))
-        } else {
-          None
+        line.split('=').map(_.trim).toSeq match {
+          case Seq("AllowedIPs", cidrStr) =>
+            val cidr = new Cidr4(cidrStr)
+            if (cidr.getAddressCount(true) == 1) {
+              Some(cidr.getLowIp(true))
+            } else {
+              None
+            }
+          case _ =>
+            None
         }
       }
       .toSet
