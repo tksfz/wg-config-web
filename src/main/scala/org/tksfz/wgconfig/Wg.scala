@@ -48,7 +48,7 @@ class Wg(config: ServerConfig) {
 
     logger.info(addServerConfig)
 
-    //s"wg addconf ${config.interface} ${f.pathAsString}".!
+    s"wg addconf ${config.interface} ${f.pathAsString}".!
 
     val clientConfig =
       s"""[Interface]
